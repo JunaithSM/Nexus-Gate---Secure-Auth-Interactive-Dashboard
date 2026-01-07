@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader, Eye, EyeOff, Github, Chrome } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { URL } from '../config';
-import axios from 'axios';
+import api from '../config';
 import StatusToast from '../components/StatusToast';
 const SignIn = () => {
     const [email, setEmail] = useState('');
@@ -19,7 +18,10 @@ const SignIn = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.post(`${URL}/signin`, { email, password }, { withCredentials: true });
+            const response = await api.post('/signin', {
+                email,
+                password
+            });
 
             setSuccess({
                 title: "Login Successful",

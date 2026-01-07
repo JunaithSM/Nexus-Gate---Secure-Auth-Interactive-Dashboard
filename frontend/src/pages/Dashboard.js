@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Mail, Sparkles } from 'lucide-react';
+import { LogOut, User, Mail, Sparkles } from 'lucide-react';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import './Dashboard.css'; // Import Dashboard Styles
 import { useEffect } from 'react';
-import axios from 'axios';
-import { URL } from '../config';
+import api from '../config';
+
 const Dashboard = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState({});
@@ -13,7 +13,7 @@ const Dashboard = () => {
 
     const handleLogout = async () => {
         try {
-            await axios.patch(`${URL}/logout`, {}, { withCredentials: true });
+            await api.patch('/logout', {});
         } catch (error) {
             console.error("Logout failed", error);
         }
@@ -23,21 +23,15 @@ const Dashboard = () => {
     useEffect(() => {
         const getUser = async () => {
             try {
-                const response = await axios.get(`${URL}/user`, {
-                    withCredentials: true
-                });
+                const response = await api.get('/user');
                 setUser(response.data);
             } catch (error) {
                 if (error.response && (error.response.status === 401 || error.response.status === 403)) {
                     try {
                         // Try to refresh the token
-                        await axios.patch(`${URL}/refresh`, {}, {
-                            withCredentials: true
-                        });
+                        await api.patch('/refresh', {});
                         // Retry getting user info
-                        const retryResponse = await axios.get(`${URL}/user`, {
-                            withCredentials: true
-                        });
+                        const retryResponse = await api.get('/user');
                         setUser(retryResponse.data);
                     } catch (refreshError) {
                         console.error("Session expired:", refreshError);
@@ -115,8 +109,6 @@ const Dashboard = () => {
                 const response = await DeviceOrientationEvent.requestPermission();
                 if (response === 'granted') {
                     setNeedsPermission(false);
-                    // Re-attach listener manually or trigger re-render to let effect handle it?
-                    // Better to just attach it here to be safe and immediate
                     window.addEventListener("deviceorientation", (event) => {
                         const { beta, gamma } = event;
                         if (beta === null || gamma === null) return;

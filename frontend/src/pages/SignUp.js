@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { User, Mail, Lock, ArrowRight, Loader, Eye, EyeOff, Github, Chrome } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useNavigate, Link } from 'react-router-dom';
+import { User, Mail, Lock, Loader2, ArrowLeft, Check, X, ShieldCheck, ArrowRight, Loader, Eye, EyeOff, Github, Chrome } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import StatusToast from '../components/StatusToast';
-import axios from 'axios';
-import { URL } from '../config';
-import { useNavigate } from 'react-router-dom';
+import api from '../config';
 const SignUp = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -24,7 +22,7 @@ const SignUp = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const response = await axios.post(`${URL}/signup`, formData, { withCredentials: true });
+            const response = await api.post('/signup', formData);
             setSuccess({
                 title: "Account Created",
                 message: response.data.message
@@ -42,7 +40,6 @@ const SignUp = () => {
             setLoading(false);
         }
     };
-
 
     return (
         <motion.div

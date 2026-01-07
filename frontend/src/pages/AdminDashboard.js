@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { URL } from '../config';
+import api from '../config';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -13,9 +12,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await axios.get(`${URL}/admin/users`, {
-                    withCredentials: true
-                });
+                const response = await api.get('/admin/users');
                 setUsers(response.data);
                 setLoading(false);
             } catch (err) {

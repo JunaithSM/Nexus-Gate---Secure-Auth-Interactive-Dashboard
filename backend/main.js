@@ -3,17 +3,26 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
+const compression = require("compression");
+const rateLimit = require("express-rate-limit");
 const router = require("./src/routes/routes");
 const { client } = require("./src/data/user");
 const PORT = process.env.PORT || 5000;
 
+// Middleware
+app.use(helmet());
+app.use(compression());
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
 app.use(cors({
-    origin:[
-        "http://localhost:5173",              // local React
-        "https://loginsystem-mu.vercel.app"   // production React
-    ],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    credentials: true    
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());

@@ -74,8 +74,8 @@ const refresh = async (req, res) => {
         );
         const newRefreshTokenId = refreshInsert.rows[0].id;
         res.status(200)
-            .cookie("token", token, { httpOnly: true, secure: false, sameSite: "strict", maxAge: 5 * 60 * 60 * 1000 }) // 5 hours
-            .cookie("refreshTokenId", newRefreshTokenId, { httpOnly: true, secure: false, sameSite: "strict", maxAge: 7 * 24 * 60 * 60 * 1000 }) // 7 days
+            .cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: "strict", maxAge: 5 * 60 * 60 * 1000 }) // 5 hours
+            .cookie("refreshTokenId", newRefreshTokenId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: "strict", maxAge: 7 * 24 * 60 * 60 * 1000 }) // 7 days
             .json({ message: "Refresh successful" });
     } catch (err) {
         console.error("Refresh error:", err);
@@ -104,8 +104,8 @@ const sendTokenResponse = async (res, user, statusCode, message) => {
     );
     const refreshTokenId = refreshInsert.rows[0].id;
     res.status(statusCode)
-        .cookie("token", token, { httpOnly: true, secure: false, sameSite: "strict", maxAge: 5 * 60 * 60 * 1000 }) // 5 hours
-        .cookie("refreshTokenId", refreshTokenId, { httpOnly: true, secure: false, sameSite: "strict", maxAge: 7 * 24 * 60 * 60 * 1000 }) // 7 days
+        .cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: "strict", maxAge: 5 * 60 * 60 * 1000 }) // 5 hours
+        .cookie("refreshTokenId", refreshTokenId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: "strict", maxAge: 7 * 24 * 60 * 60 * 1000 }) // 7 days
         .json({ message: message, user });
 };
 
