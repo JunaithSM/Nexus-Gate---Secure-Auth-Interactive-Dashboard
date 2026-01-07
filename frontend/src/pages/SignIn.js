@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Mail, Lock, Loader2, ArrowRight, Chrome, Github, Eye, EyeOff, Loader } from 'lucide-react';
+
+import { motion } from 'framer-motion'; 
 import api from '../config';
 import StatusToast from '../components/StatusToast';
 const SignIn = () => {
