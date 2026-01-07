@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
     origin:[
         "http://localhost:5173",              // local React
-        "https://nexus-frontend.vercel.app"   // production React
+        "https://loginsystem-mu.vercel.app"   // production React
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true    
