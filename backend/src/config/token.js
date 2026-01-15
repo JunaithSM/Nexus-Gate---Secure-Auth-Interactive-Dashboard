@@ -58,7 +58,7 @@ const getRefreshCookieOptions = () => ({
     secure: isProduction,
     sameSite: isProduction ? 'none' : 'lax',
     maxAge: REFRESH_COOKIE_MAX_AGE,
-    path: '/'
+    path: '/auth/refresh'
 });
 
 /**
@@ -76,7 +76,7 @@ const clearRefreshCookie = (res) => {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'none' : 'lax',
-        path: '/'
+        path: '/auth/refresh'
     });
 };
 
