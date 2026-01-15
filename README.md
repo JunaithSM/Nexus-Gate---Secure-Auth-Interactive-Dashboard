@@ -33,14 +33,24 @@
 </div>
 
 ### Key Security Features
+- ✅ **Rotation Flow**: Refresh request -> Server validates -> Issues new token -> Invalidates old one.
+- ✅ **Secure Cookies**: HttpOnly, Secure, SameSite=None configuration.
+- ✅ **Token Hashing**: Refresh tokens are stored as hashes in the DB (bcrypt) for maximum security.
 - ✅ **No LocalStorage**: Access tokens are kept in memory to prevent XSS attacks.
-- ✅ **HttpOnly Cookies**: Refresh tokens are inaccessible to JavaScript.
-- ✅ **Token Rotation**: New refresh token issued on every use.
 - ✅ **Database Backed**: Sessions stored in PostgreSQL for revocation support.
 - ✅ **Redis Caching**: High-performance session validation.
-- ✅ **Cross-Domain**: Configured for `sameSite=none` and `secure=true`.
 
 ---
+
+### Cookie Configuration
+```javascript
+res.cookie("refreshToken", token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/auth/refresh",
+});
+```
 
 [Click here to view demo](https://loginsystem-mu.vercel.app/)
 
@@ -50,6 +60,7 @@
   <tr>
     <td width="50%">
       <h3>🔐 Authentication</h3>
+      <img src="assets/screenshots/signin.png" width="100%" style="border-radius: 10px; margin-bottom: 10px;" alt="Secure Sign In" />
       <ul>
         <li>JWT access + refresh token flow</li>
         <li>Silent token refresh with Axios interceptors</li>
@@ -59,6 +70,7 @@
     </td>
     <td width="50%">
       <h3>✨ User Experience</h3>
+      <img src="assets/screenshots/dashboard.png" width="100%" style="border-radius: 10px; margin-bottom: 10px;" alt="Dashboard with Glassmorphism" />
       <ul>
         <li>Glassmorphism UI design</li>
         <li>Interactive 3D dashboard card (mouse + gyroscope)</li>
@@ -99,8 +111,8 @@
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/JunaithSM/Nexus-Gate---Secure-Auth-Interactive-Dashboard.git
-cd "Login System"
+git clone https://github.com/JunaithSM/Nexus-Gate---Secure-Auth-Interactive-Dashboard.git nexus-gate-auth-dashboard
+cd nexus-gate-auth-dashboard
 
 # Install backend dependencies
 cd backend && npm install
@@ -198,7 +210,15 @@ UPDATE users SET role = 'admin' WHERE email = 'your@email.com';
 
 ---
 
-## 📁 Project Structure
+## � Future Improvements
+
+- [ ] **RBAC Granularity**: Move from simple roles to permission-based access (e.g., `user:read`, `user:ban`).
+- [ ] **Audit Logs**: Track administrator actions for security compliance.
+- [ ] **2FA**: Implement Two-Factor Authentication using TOTP.
+
+---
+
+## �📁 Project Structure
 
 ```
 Login System/
