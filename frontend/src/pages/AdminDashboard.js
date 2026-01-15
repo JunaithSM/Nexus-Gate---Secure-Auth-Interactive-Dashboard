@@ -12,7 +12,7 @@ const AdminDashboard = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await api.get('/admin/users');
+                const response = await api.get('/api/admin/users');
                 setUsers(response.data);
                 setLoading(false);
             } catch (err) {

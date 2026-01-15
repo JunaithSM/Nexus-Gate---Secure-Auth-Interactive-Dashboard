@@ -1,40 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, Loader2, ArrowLeft, Check, X, ShieldCheck, ArrowRight, Loader, Eye, EyeOff, Github, Chrome } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { User, Mail, Lock, ArrowRight, Loader, Eye, EyeOff, Github, Chrome } from 'lucide-react';
+import { motion } from 'framer-motion';
 import StatusToast from '../components/StatusToast';
-import api from '../config';
+import api, { setAccessToken } from '../config';
+import { useAuth } from '../context/AuthContext';
+
 const SignUp = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
 
-
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
         try {
-            const response = await api.post('/signup', formData);
+            const response = await api.post('/auth/signup', formData);
+
+            // Store access token in memory
+            setAccessToken(response.data.accessToken);
+
+            // Update auth context to trigger route guards
+            login(response.data.accessToken, response.data.user);
+
             setSuccess({
                 title: "Account Created",
                 message: response.data.message
             });
-            setTimeout(() => {
-                navigate('/dashboard');
-            }, 1000);
+
+            // Immediately redirect to dashboard
+            navigate('/dashboard');
         } catch (error) {
             console.error("Signup failed:", error);
             setError({
-                title: "Authentication Failed",
-                message: error.response?.data?.message || "Please check your credentials and try again"
+                title: "Registration Failed",
+                message: error.response?.data?.message || "Please check your information and try again"
             });
         } finally {
             setLoading(false);
@@ -125,10 +135,8 @@ const SignUp = () => {
                     </button>
                 </div>
 
-
-
                 <div className="legal-text mb-4 text-center">
-                    By joining, you agree to our <a href="#" className="link">Terms</a> and <a href="#" className="link">Privacy Policy</a>.
+                    By joining, you agree to our <button type="button" className="link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Terms</button> and <button type="button" className="link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Privacy Policy</button>.
                 </div>
 
                 <button type="submit" className="btn-primary" disabled={loading}>

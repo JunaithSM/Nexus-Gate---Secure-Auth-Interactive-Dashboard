@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Loader2, ArrowRight, Chrome, Github, Eye, EyeOff, Loader } from 'lucide-react';
-
-import { motion } from 'framer-motion'; 
-import api from '../config';
+import { Mail, Lock, ArrowRight, Chrome, Github, Eye, EyeOff, Loader } from 'lucide-react';
+import { motion } from 'framer-motion';
+import api, { setAccessToken } from '../config';
 import StatusToast from '../components/StatusToast';
+import { useAuth } from '../context/AuthContext';
+
 const SignIn = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -13,21 +14,27 @@ const SignIn = () => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
         try {
-            const response = await api.post('/signin', {
-                email,
-                password
-            });
+            const response = await api.post('/auth/signin', { email, password });
+
+            // Store access token in memory (via config.js)
+            setAccessToken(response.data.accessToken);
+
+            // Update auth context to trigger route guards
+            login(response.data.accessToken, response.data.user);
 
             setSuccess({
                 title: "Login Successful",
                 message: response.data.message
             });
+
+            // Immediately redirect to dashboard
             navigate('/dashboard');
         } catch (error) {
             console.error("Login failed:", error);
@@ -65,7 +72,6 @@ const SignIn = () => {
             </div>
 
             <form onSubmit={handleLogin}>
-
                 <StatusToast
                     type="error"
                     title={error?.title}
@@ -116,7 +122,7 @@ const SignIn = () => {
                         <input type="checkbox" className="checkbox-input" />
                         Remember me
                     </label>
-                    <a href="#" className="link text-sm">Forgot Password?</a>
+                    <button type="button" className="link text-sm" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Forgot Password?</button>
                 </div>
 
                 <button type="submit" className="btn-primary" disabled={loading}>

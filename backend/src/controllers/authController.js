@@ -1,26 +1,40 @@
-const bcrypt = require("bcrypt");
-const saltRounds = 10;
-const { client } = require("../data/user");
-const { generateAccessToken, generateRefreshToken } = require("../config/token");
+import { compareSync, hashSync } from "../config/hash.js";
+import userRepo from "../repository/user.repo.js";
+import refreshSessionRepo from "../repository/refresh_session.repo.js";
+import sessionCache from "../services/sessionCache.js";
+import {
+    generateAccessToken,
+    generateRefreshToken,
+    verifyRefreshToken,
+    setRefreshCookie,
+    clearRefreshCookie
+} from "../config/token.js";
+import { JWT_SECRET } from "../config/env.js";
 
+/**
+ * POST /signup
+ */
 const signup = async (req, res) => {
     try {
         const { name, email, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Check if user exists
-        const check = await client.query("SELECT * FROM users WHERE email = $1", [email]);
-        if (check.rows.length > 0) {
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: "Name, email and password are required" });
+        }
+
+        const hashedPassword = await hashSync(password);
+
+        const existingUser = await userRepo.getByEmail(email);
+        if (existingUser) {
             return res.status(409).json({ message: "Email already exists" });
         }
-        // Insert new user
-        const result = await client.query(
-            "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
-            [name, email, hashedPassword]
-        );
 
-        // User should probably get a token on signup too!
-        const user = result.rows[0];
+        const user = await userRepo.create({
+            name,
+            email,
+            password: hashedPassword
+        });
+
         await sendTokenResponse(res, user, 201, "Signup successful");
     } catch (err) {
         console.error("Signup error:", err);
@@ -28,21 +42,27 @@ const signup = async (req, res) => {
     }
 };
 
+/**
+ * POST /signin
+ */
 const signin = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const result = await client.query("SELECT * FROM users WHERE email = $1", [email]);
 
-        if (result.rows.length === 0) {
-            return res.status(400).json({ message: "Invalid credentials" });
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required" });
         }
 
-        const user = result.rows[0];
-        if (!await bcrypt.compare(password, user.password)) {
-            return res.status(400).json({ message: "Invalid credentials" });
+        const user = await userRepo.getByEmail(email);
+        if (!user) {
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        if (!process.env.JWT_SECRET) {
+        if (!await compareSync(password, user.password)) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        if (!JWT_SECRET) {
             console.error("JWT_SECRET is not defined!");
             return res.status(500).json({ message: "Internal server configuration error" });
         }
@@ -54,62 +74,149 @@ const signin = async (req, res) => {
     }
 };
 
+/**
+ * POST /refresh
+ * Uses Redis cache for faster session lookup
+ */
 const refresh = async (req, res) => {
     try {
-        const refreshTokenId = req.cookies.refreshTokenId;
-        if (!refreshTokenId || refreshTokenId === 'undefined') {
+        const refreshToken = req.cookies.refreshToken;
+
+        if (!refreshToken || refreshToken === 'undefined') {
+            clearRefreshCookie(res);
             return res.status(401).json({ message: "No refresh token provided" });
         }
-        const result = await client.query("SELECT * FROM refresh_token where id = $1", [refreshTokenId]);
-        if (result.rows.length === 0 || result.rows[0].revoked) {
+
+        // Verify JWT signature
+        let decoded;
+        try {
+            decoded = verifyRefreshToken(refreshToken);
+        } catch (err) {
+            clearRefreshCookie(res);
             return res.status(403).json({ message: "Invalid refresh token" });
         }
-        const user = result.rows[0];
-        const token = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user);
-        await client.query("UPDATE refresh_token SET revoked = true WHERE id = $1", [refreshTokenId]);
-        const refreshInsert = await client.query(
-            "INSERT INTO refresh_token (user_id, token_hash, created_at, expires_at) VALUES ($1, $2, $3, $4) RETURNING id",
-            [user.id, bcrypt.hashSync(refreshToken.token, saltRounds), new Date(), new Date(refreshToken.exp)]
-        );
-        const newRefreshTokenId = refreshInsert.rows[0].id;
-        res.status(200)
-            .cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: "none", maxAge: 5 * 60 * 60 * 1000 }) // 5 hours
-            .cookie("refreshTokenId", newRefreshTokenId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: "none", maxAge: 7 * 24 * 60 * 60 * 1000 }) // 7 days
-            .json({ message: "Refresh successful" });
+
+        // Try Redis cache first for faster lookup
+        let session = await sessionCache.get(decoded.id);
+
+        // If not in cache, fallback to PostgreSQL
+        if (!session) {
+            session = await refreshSessionRepo.getByUserId(decoded.id);
+
+            // Cache the session for next time
+            if (session) {
+                await sessionCache.set(decoded.id, session);
+            }
+        }
+
+        if (!session || session.revoked) {
+            clearRefreshCookie(res);
+            return res.status(403).json({ message: "Session not found or revoked" });
+        }
+
+        // Verify token hash
+        const isValidToken = await compareSync(refreshToken, session.token_hash);
+        if (!isValidToken) {
+            await refreshSessionRepo.revokeByUserId(decoded.id);
+            await sessionCache.delete(decoded.id);
+            clearRefreshCookie(res);
+            return res.status(403).json({ message: "Invalid refresh token" });
+        }
+
+        // Check expiry
+        if (new Date(session.expires_at) < new Date()) {
+            await refreshSessionRepo.deleteById(session.id);
+            await sessionCache.delete(decoded.id);
+            clearRefreshCookie(res);
+            return res.status(403).json({ message: "Refresh token expired" });
+        }
+
+        // Get user
+        const user = await userRepo.getById(decoded.id);
+        if (!user) {
+            await refreshSessionRepo.deleteById(session.id);
+            await sessionCache.delete(decoded.id);
+            clearRefreshCookie(res);
+            return res.status(401).json({ message: "User not found" });
+        }
+
+        // Rotate: delete old session from DB and cache
+        await refreshSessionRepo.deleteById(session.id);
+        await sessionCache.delete(decoded.id);
+
+        // Generate new tokens
+        await sendTokenResponse(res, user, 200, "Token refreshed");
     } catch (err) {
         console.error("Refresh error:", err);
+        clearRefreshCookie(res);
         res.status(500).json({ message: "Internal server error" });
     }
 };
 
+/**
+ * POST /logout
+ * Clears both PostgreSQL and Redis
+ */
 const logout = async (req, res) => {
     try {
-        await client.query("UPDATE refresh_token SET revoked = true WHERE user_id = $1", [req.user.id]);
-        res.clearCookie("token");
-        res.clearCookie("refreshTokenId");
+        if (req.user && req.user.id) {
+            // Clear from PostgreSQL
+            await refreshSessionRepo.deleteByUserId(req.user.id);
+            // Clear from Redis cache
+            await sessionCache.delete(req.user.id);
+        }
+
+        clearRefreshCookie(res);
         res.status(200).json({ message: "Logout successful" });
     } catch (err) {
         console.error("Logout error:", err);
+        clearRefreshCookie(res);
         res.status(500).json({ message: "Internal server error" });
     }
 };
 
+/**
+ * Helper: Generate tokens and store session in DB + Redis
+ */
 const sendTokenResponse = async (res, user, statusCode, message) => {
-    const token = generateAccessToken(user);
+    const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-    const refreshInsert = await client.query(
-        "INSERT INTO refresh_token (user_id, token_hash, created_at, expires_at) VALUES ($1, $2, $3, $4) RETURNING id",
-        [user.id, bcrypt.hashSync(refreshToken.token, saltRounds), new Date(), new Date(refreshToken.exp)]
-    );
-    const refreshTokenId = refreshInsert.rows[0].id;
-    res.status(statusCode)
-        .cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: "none", maxAge: 5 * 60 * 60 * 1000 }) // 5 hours
-        .cookie("refreshTokenId", refreshTokenId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: "none", maxAge: 7 * 24 * 60 * 60 * 1000 }) // 7 days
-        .json({ message: message, user });
+    const hashedRefreshToken = await hashSync(refreshToken);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // Store in PostgreSQL
+    const session = await refreshSessionRepo.create({
+        userId: user.id,
+        tokenHash: hashedRefreshToken,
+        expiresAt: expiresAt
+    });
+
+    // Cache in Redis for fast lookups
+    await sessionCache.set(user.id, {
+        id: session.id,
+        user_id: user.id,
+        token_hash: hashedRefreshToken,
+        expires_at: expiresAt,
+        revoked: false
+    });
+
+    setRefreshCookie(res, refreshToken);
+
+    res.status(statusCode).json({
+        message: message,
+        accessToken: accessToken,
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }
+    });
 };
 
-module.exports = {
+export default {
     signup,
     signin,
     refresh,
