@@ -6,6 +6,7 @@ import './Dashboard.css';
 import api, { clearAccessToken } from '../config';
 import { useCard3D } from '../hooks/useCard3D';
 import { useAuth } from '../context/AuthContext';
+import LoadingScreen from '../components/LoadingScreen';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -52,13 +53,7 @@ const Dashboard = () => {
     } = useCard3D();
 
     if (loading) {
-        return (
-            <div className="dashboard-container">
-                <div className="flex items-center justify-center min-h-screen">
-                    <Loader className="animate-spin" size={32} />
-                </div>
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     if (!user) {

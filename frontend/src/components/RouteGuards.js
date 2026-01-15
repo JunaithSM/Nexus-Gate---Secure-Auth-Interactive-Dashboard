@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Loader } from 'lucide-react';
+import LoadingScreen from './LoadingScreen';
 
 /**
  * ProtectedRoute - Requires authentication
@@ -10,11 +10,7 @@ export const ProtectedRoute = () => {
     const { isAuthenticated, loading } = useAuth();
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%)' }}>
-                <Loader className="animate-spin text-white" size={40} />
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     return isAuthenticated ? <Outlet /> : <Navigate to="/signin" replace />;
@@ -28,11 +24,7 @@ export const PublicRoute = () => {
     const { isAuthenticated, loading } = useAuth();
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%)' }}>
-                <Loader className="animate-spin text-white" size={40} />
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;

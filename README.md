@@ -62,6 +62,8 @@
         <li>Glassmorphism UI design</li>
         <li>Interactive 3D dashboard card (mouse + gyroscope)</li>
         <li>Dynamic lighting effects</li>
+        <li><b>Creative Loading Screen</b> with cybernetic core animation</li>
+        <li>Enhanced Admin UI with shield indicators</li>
         <li>Mobile responsive layout</li>
       </ul>
     </td>
