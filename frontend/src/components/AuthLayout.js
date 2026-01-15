@@ -32,15 +32,14 @@ const AuthLayout = () => {
                 >
                     <h2 className="text-4xl font-bold mb-4 text-white">Elevate Your Experience.</h2>
                     <p className="text-gray-300 text-lg leading-relaxed mb-6">
-                        Join thousands of developers and creators building the future with our premium platform. Secure, fast, and beautiful.
+                        Building secure apps and exploring cybersecurity while mastering Linux and full-stack development.
                     </p>
 
                     <div className="flex items-center gap-4 pt-6 border-t border-white/10">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400"></div>
-                        <div>
-                            <div className="text-white font-medium">Alex Morgan</div>
-                            <div className="text-sm text-gray-400">Product Designer</div>
-                        </div>
+                            <div className="text-white font-semibold text-lg flex items-center gap-2">
+                                S Mohammed Junaith
+                            </div>
+                            <div className="text-sm text-gray-400 font-medium">Full Stack Developer</div>   
                     </div>
                 </motion.div>
             </div>

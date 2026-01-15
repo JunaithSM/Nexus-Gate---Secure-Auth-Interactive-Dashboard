@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Mail, Sparkles, Loader } from 'lucide-react';
+import { LogOut, Mail, Sparkles, Loader, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './Dashboard.css';
 import api, { clearAccessToken } from '../config';
@@ -130,9 +130,10 @@ const Dashboard = () => {
                     {user.role === 'admin' && (
                         <button
                             onClick={() => navigate('/admin')}
-                            className="mt-4 px-4 py-2 bg-indigo-500/20 text-indigo-300 rounded-lg text-sm font-semibold hover:bg-indigo-500/30 transition-colors"
-                            style={{ position: 'relative', zIndex: 2, border: '1px solid rgba(99, 102, 241, 0.4)' }}
+                            className="mt-6 w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 group"
+                            style={{ position: 'relative', zIndex: 2 }}
                         >
+                            <Shield size={18} className="group-hover:rotate-12 transition-transform duration-300" />
                             Admin Panel
                         </button>
                     )}

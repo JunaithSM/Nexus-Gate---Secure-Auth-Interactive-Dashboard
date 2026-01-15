@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, ArrowRight, Loader, Eye, EyeOff, Github, Chrome } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, Loader, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import StatusToast from '../components/StatusToast';
 import api, { setAccessToken } from '../config';
@@ -62,18 +62,7 @@ const SignUp = () => {
                 <p className="subtitle">Join our exclusive community today</p>
             </div>
 
-            <div className="social-buttons">
-                <button className="btn-social">
-                    <Chrome size={20} /> Google
-                </button>
-                <button className="btn-social">
-                    <Github size={20} /> Github
-                </button>
-            </div>
 
-            <div className="divider">
-                <span>Or register with email</span>
-            </div>
 
             <form onSubmit={handleSubmit}>
                 <StatusToast

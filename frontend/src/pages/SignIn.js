@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Chrome, Github, Eye, EyeOff, Loader } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api, { setAccessToken } from '../config';
 import StatusToast from '../components/StatusToast';
@@ -58,18 +58,7 @@ const SignIn = () => {
                 <p className="subtitle">Sign in to continue your journey</p>
             </div>
 
-            <div className="social-buttons">
-                <button className="btn-social">
-                    <Chrome size={20} /> Google
-                </button>
-                <button className="btn-social">
-                    <Github size={20} /> Github
-                </button>
-            </div>
 
-            <div className="divider">
-                <span>Or continue with</span>
-            </div>
 
             <form onSubmit={handleLogin}>
                 <StatusToast
@@ -117,13 +106,7 @@ const SignIn = () => {
                     </button>
                 </div>
 
-                <div className="flex-between mb-6">
-                    <label className="checkbox-label">
-                        <input type="checkbox" className="checkbox-input" />
-                        Remember me
-                    </label>
-                    <button type="button" className="link text-sm" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Forgot Password?</button>
-                </div>
+
 
                 <button type="submit" className="btn-primary" disabled={loading}>
                     {loading ? <Loader className="animate-spin" size={20} /> :
